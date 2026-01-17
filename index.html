@@ -113,7 +113,7 @@
     // 狀態檢查：解決 Bot undefined 問題
     async function checkStatus() {
         try {
-            const res = await fetch('http://localhost:3000/api/status');
+            const res = await fetch('https://petey732.github.io/test/api/status');
             const data = await res.json();
             const dot = document.getElementById('status-dot');
             const statusText = document.getElementById('status-text');
@@ -130,7 +130,7 @@
     // 抓取訊息：核心邏輯
     async function fetchMessages() {
         try {
-            const res = await fetch('http://localhost:3000/api/messages');
+            const res = await fetch('https://petey732.github.io/test/api/messages');
             if (!res.ok) throw new Error('Network response was not ok');
             
             allMessages = await res.json();

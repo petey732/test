@@ -10,7 +10,7 @@ const cors = require('cors');
 // ⚠️ 請務必使用你 Reset 過後的新 Token
 const TOKEN = process.env.DISCORD_TOKEN;
 const CHANNEL_ID = process.env.CHANNEL_ID;
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 const app = express();
 app.use(cors());
