@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discord Flux Archive 2026</title>
+    <style>
+        :root {
+            --glass: rgba(255, 255, 255, 0.05);
+            --border: rgba(255, 255, 255, 0.1);
+            --accent: #7289da;
+        }
+
+        body {
+            margin: 0;
+            background: radial-gradient(circle at top right, #1a1c2c, #0a0b10);
+            color: #e0e0e0;
+            font-family: 'Inter', system-ui, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* 玻璃噴砂背景層 */
+        .container {
+            width: 90%;
+            max-width: 900px;
+            margin: 40px 0;
+            padding: 30px;
+            background: var(--glass);
+            backdrop-filter: blur(15px);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        h1 { font-weight: 300; letter-spacing: -1px; }
+
+        /* 搜尋框設計 */
+        .search-box {
+            position: relative;
+            width: 300px;
+        }
+
+        .search-box input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border);
+            padding: 12px 20px;
+            border-radius: 12px;
+            color: white;
+            transition: 0.3s;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 15px rgba(114, 137, 218, 0.3);
+        }
+
+        /* 訊息卡片 */
+        .message-card {
+            background: rgba(255, 255, 255, 0.02);
+            border-bottom: 1px solid var(--border);
+            padding: 20px;
+            display: flex;
+            gap: 15px;
+            transition: 0.2s;
+        }
+
+        .message-card:hover { background: rgba(255, 255, 255, 0.05); }
+
+        .avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            border: 2px solid var(--border);
+        }
+
+        .content b { color: var(--accent); display: block; margin-bottom: 4px; }
+        .content p { margin: 0; opacity: 0.9; line-height: 1.5; }
+        .time { font-size: 0.75rem; opacity: 0.4; margin-top: 8px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Discord訊息 <b>2026</b></h1>
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="搜尋關鍵字...">
+        </div>
+    </header>
+
+    <div id="messageList">
+        </div>
+</div>
+<div id="status-dot" style="width: 12px; height: 12px; border-radius: 50%; background: gray;"></div>
+<span id="status-text">Connecting...</span>
+
+<script>
+    let allMessages = [];
+    let currentSearchTerm = ""; 
+
+    // 狀態檢查：解決 Bot undefined 問題
+    async function checkStatus() {
+        try {
+            const res = await fetch('http://localhost:3000/api/status');
+            const data = await res.json();
+            const dot = document.getElementById('status-dot');
+            const statusText = document.getElementById('status-text');
+            
+            // 修正：確保能讀到 data.status
+            dot.style.background = data.status === 'Online' ? '#43b581' : '#f04747';
+            statusText.innerText = `Bot ${data.status}`;
+        } catch (err) {
+            document.getElementById('status-dot').style.background = '#f04747';
+            document.getElementById('status-text').innerText = 'Server Down';
+        }
+    }
+
+    // 抓取訊息：核心邏輯
+    async function fetchMessages() {
+        try {
+            const res = await fetch('http://localhost:3000/api/messages');
+            if (!res.ok) throw new Error('Network response was not ok');
+            
+            allMessages = await res.json();
+            applyFilterAndRender(); // 抓完資料立刻套用目前的搜尋關鍵字
+        } catch (err) {
+            console.error("無法讀取訊息:", err);
+        }
+    }
+
+    // 過濾並顯示
+    function applyFilterAndRender() {
+        const keyword = currentSearchTerm.trim().toLowerCase();
+        const filtered = allMessages.filter(m => 
+            m.content.toLowerCase().includes(keyword) || 
+            m.author.toLowerCase().includes(keyword)
+        );
+        render(filtered);
+    }
+
+    function render(data) {
+        const list = document.getElementById('messageList');
+        if (data.length === 0) {
+            list.innerHTML = '<p style="text-align:center; padding:20px; opacity:0.5;">查無訊息...</p>';
+            return;
+        }
+        list.innerHTML = data.map(m => `
+            <div class="message-card">
+                <img src="${m.avatar}" class="avatar">
+                <div class="content">
+                    <b>${m.author}</b>
+                    <p>${m.content}</p>
+                    <div class="time">${new Date(m.timestamp).toLocaleString()}</div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // 監聽搜尋框
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+        currentSearchTerm = e.target.value;
+        applyFilterAndRender();
+    });
+
+    // 初始化啟動
+    checkStatus();
+    fetchMessages();
+    
+    // 設定定時器
+    setInterval(checkStatus, 5000);   // 每 5 秒檢查一次狀態
+    setInterval(fetchMessages, 5000); // 每 5 秒更新一次訊息 (搜尋會被保留)
+</script>
+
+
+
+</body>
+</html>
